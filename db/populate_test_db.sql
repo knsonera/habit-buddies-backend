@@ -1,5 +1,5 @@
+-- Create Database
 CREATE DATABASE habit_buddies;
-
 \c habit_buddies
 
 -- Create Users table
@@ -8,32 +8,40 @@ CREATE TABLE Users (
     username VARCHAR(50) UNIQUE NOT NULL,
     email VARCHAR(100) UNIQUE NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
+    refresh_token VARCHAR(255),
     game_score INT DEFAULT 0,
-    avatar_image VARCHAR(255),
+    avatar_id INT DEFAULT 1,
+    fullname VARCHAR(100),
+    streak INT DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Create Icons table
-CREATE TABLE Icons (
-    icon_id SERIAL PRIMARY KEY,
-    name VARCHAR(100) NOT NULL,
-    library VARCHAR(100) NOT NULL
+-- Create Categories table
+CREATE TABLE Categories (
+    category_id SERIAL PRIMARY KEY,
+    category_name VARCHAR(100) NOT NULL UNIQUE
 );
 
--- Create Challenges table
-CREATE TABLE Challenges (
-    challenge_id SERIAL PRIMARY KEY,
-    challenge_name VARCHAR(100) NOT NULL,
+-- Create Quests table
+CREATE TABLE Quests (
+    quest_id SERIAL PRIMARY KEY,
+    user_id INT REFERENCES Users(user_id),
+    quest_name VARCHAR(100) NOT NULL,
     description TEXT,
-    duration VARCHAR(100) NOT NULL, -- Duration in days
-    checkin_frequency VARCHAR(50) NOT NULL, -- e.g., daily, weekly, monthly, custom
-    time VARCHAR(50), -- Time as a string
-    icon_id INT REFERENCES Icons(icon_id),
+    duration VARCHAR(100) NOT NULL,
+    checkin_frequency VARCHAR(50) NOT NULL,
+    time VARCHAR(50),
+    zoom_link VARCHAR(100),
+    icon_id INT DEFAULT 1,
     start_date DATE,
     end_date DATE,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    category_id INT REFERENCES Categories(category_id) DEFAULT 1,
+    created_by INT REFERENCES Users(user_id),
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    status VARCHAR(20) NOT NULL,
+    joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT quests_status_check CHECK (status IN ('active', 'completed', 'dropped'))
 );
 
 -- Create Badges table
@@ -53,21 +61,13 @@ CREATE TABLE Friendship (
     friend_id INT REFERENCES Users(user_id),
     status VARCHAR(20) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (user_id, friend_id),
+    CONSTRAINT friendship_status_check CHECK (status IN ('pending', 'accepted', 'declined'))
 );
 
--- Create UserChallenge table
-CREATE TABLE UserChallenge (
-    user_challenge_id SERIAL PRIMARY KEY,
-    user_id INT REFERENCES Users(user_id),
-    challenge_id INT REFERENCES Challenges(challenge_id),
-    status VARCHAR(20) NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- Create UserBadge table
-CREATE TABLE UserBadge (
+-- Create UserBadges table
+CREATE TABLE UserBadges (
     user_badge_id SERIAL PRIMARY KEY,
     user_id INT REFERENCES Users(user_id),
     badge_id INT REFERENCES Badges(badge_id),
@@ -79,111 +79,62 @@ CREATE TABLE UserBadge (
 -- Create Checkins table
 CREATE TABLE Checkins (
     checkin_id SERIAL PRIMARY KEY,
-    user_challenge_id INT REFERENCES UserChallenge(user_challenge_id),
+    quest_id INT REFERENCES Quests(quest_id),
     checkin_date TIMESTAMP NOT NULL,
     notes TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-\dt
+-- Create FriendInvites table
+CREATE TABLE FriendInvites (
+    invite_id SERIAL PRIMARY KEY,
+    sender_id INT REFERENCES Users(user_id),
+    receiver_id INT REFERENCES Users(user_id),
+    quest_id INT REFERENCES Quests(quest_id),
+    status VARCHAR(20) DEFAULT 'pending',
+    sent_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    responded_at TIMESTAMP,
+    CONSTRAINT invites_status_check CHECK (status IN ('pending', 'accepted', 'declined'))
+);
 
--- Insert user Jane Miller
-INSERT INTO Users (username, email, password_hash, game_score, avatar_image, created_at, updated_at)
-VALUES ('@superjane', 'jane.miller@example.com', 'hashedpassword', 167, 'https://via.placeholder.com/150', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-RETURNING user_id;
+-- Create News table
+CREATE TABLE News (
+    news_id SERIAL PRIMARY KEY,
+    user_id INT REFERENCES Users(user_id),
+    event_type VARCHAR(50) NOT NULL,
+    event_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    description TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 
--- Insert user John Smith
-INSERT INTO Users (username, email, password_hash, game_score, avatar_image, created_at, updated_at)
-VALUES ('@johnnysmm', 'john.smith@example.com', 'hashedpassword', 200, 'https://via.placeholder.com/150', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-RETURNING user_id;
+-- Create Chats table
+CREATE TABLE Chats (
+    chat_id SERIAL PRIMARY KEY,
+    quest_id INT REFERENCES Quests(quest_id),
+    encrypted_message TEXT NOT NULL,
+    sender_id INT REFERENCES Users(user_id),
+    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    status VARCHAR(20) NOT NULL,
+    CONSTRAINT chats_status_check CHECK (status IN ('sent', 'delivered', 'read'))
+);
 
--- Insert user Emma Watson
-INSERT INTO Users (username, email, password_hash, game_score, avatar_image, created_at, updated_at)
-VALUES ('@emmaw', 'emma.watson@example.com', 'hashedpassword', 250, 'https://via.placeholder.com/150', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-RETURNING user_id;
+-- Adding indexes for performance
+CREATE INDEX idx_quest_id_chats ON Chats(quest_id);
+CREATE INDEX idx_sender_id_chats ON Chats(sender_id);
+CREATE INDEX idx_user_id_news ON News(user_id);
+CREATE INDEX idx_user_id_friendship ON Friendship(user_id);
+CREATE INDEX idx_friend_id_friendship ON Friendship(friend_id);
 
--- Insert icons
-INSERT INTO Icons (name, library) VALUES ('trophy', 'FontAwesome');
-INSERT INTO Icons (name, library) VALUES ('book', 'FontAwesome');
-INSERT INTO Icons (name, library) VALUES ('meditation', 'MaterialCommunityIcons');
-INSERT INTO Icons (name, library) VALUES ('no-food', 'MaterialCommunityIcons');
-INSERT INTO Icons (name, library) VALUES ('yoga', 'MaterialCommunityIcons');
-INSERT INTO Icons (name, library) VALUES ('heart', 'FontAwesome');
-INSERT INTO Icons (name, library) VALUES ('apple', 'FontAwesome');
-INSERT INTO Icons (name, library) VALUES ('ban', 'FontAwesome');
-INSERT INTO Icons (name, library) VALUES ('tint', 'FontAwesome');
-INSERT INTO Icons (name, library) VALUES ('pencil', 'FontAwesome');
-INSERT INTO Icons (name, library) VALUES ('edit', 'FontAwesome');
-INSERT INTO Icons (name, library) VALUES ('leaf', 'FontAwesome');
-INSERT INTO Icons (name, library) VALUES ('coffee', 'FontAwesome');
-
--- Insert challenges for all users
-INSERT INTO Challenges (challenge_name, description, duration, checkin_frequency, time, icon_id, start_date, end_date, created_at, updated_at)
-VALUES
-       ('10,000 Steps Challenge', 'Walk 10,000 steps every day to stay fit and healthy.', '30 days', 'Daily', 'Anytime', (SELECT icon_id FROM Icons WHERE name='trophy' AND library='FontAwesome'), CURRENT_DATE, CURRENT_DATE + INTERVAL '30 days', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-       ('Read a Book Challenge', 'Read one book each week.', '4 weeks', 'Weekly', 'Anytime', (SELECT icon_id FROM Icons WHERE name='book' AND library='FontAwesome'), CURRENT_DATE, CURRENT_DATE + INTERVAL '4 weeks', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-       ('Meditation Challenge', 'Meditate for 10 minutes daily.', '21 days', 'Daily', 'Morning', (SELECT icon_id FROM Icons WHERE name='meditation' AND library='MaterialCommunityIcons'), CURRENT_DATE, CURRENT_DATE + INTERVAL '21 days', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-       ('No Sugar Challenge', 'Avoid sugar for 10 days.', '10 days', 'Daily', 'Anytime', (SELECT icon_id FROM Icons WHERE name='no-food' AND library='MaterialCommunityIcons'), CURRENT_DATE - INTERVAL '20 days', CURRENT_DATE - INTERVAL '10 days', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-       ('Yoga Challenge', 'Practice yoga for 15 minutes daily.', '15 days', 'Daily', 'Morning', (SELECT icon_id FROM Icons WHERE name='yoga' AND library='MaterialCommunityIcons'), CURRENT_DATE - INTERVAL '30 days', CURRENT_DATE - INTERVAL '15 days', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-       ('30-Day Fitness Challenge', 'Exercise daily for 30 minutes.', '30 days', 'Daily', 'Evening', (SELECT icon_id FROM Icons WHERE name='heart' AND library='FontAwesome'), CURRENT_DATE, CURRENT_DATE + INTERVAL '30 days', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-       ('Healthy Eating Challenge', 'Eat at least 5 servings of fruits and vegetables daily.', '7 days', 'Daily', 'Anytime', (SELECT icon_id FROM Icons WHERE name='apple' AND library='FontAwesome'), CURRENT_DATE, CURRENT_DATE + INTERVAL '7 days', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-       ('No Junk Food Challenge', 'Avoid junk food for 7 days.', '7 days', 'Daily', 'Anytime', (SELECT icon_id FROM Icons WHERE name='ban' AND library='FontAwesome'), CURRENT_DATE - INTERVAL '10 days', CURRENT_DATE - INTERVAL '3 days', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-       ('Water Drinking Challenge', 'Drink 8 glasses of water daily.', '14 days', 'Daily', 'Anytime', (SELECT icon_id FROM Icons WHERE name='tint' AND library='FontAwesome'), CURRENT_DATE - INTERVAL '20 days', CURRENT_DATE - INTERVAL '6 days', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-       ('Daily Drawing Challenge', 'Draw something new every day.', '30 days', 'Daily', 'Anytime', (SELECT icon_id FROM Icons WHERE name='pencil' AND library='FontAwesome'), CURRENT_DATE, CURRENT_DATE + INTERVAL '30 days', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-       ('Writing Challenge', 'Write 500 words daily.', '14 days', 'Daily', 'Anytime', (SELECT icon_id FROM Icons WHERE name='edit' AND library='FontAwesome'), CURRENT_DATE, CURRENT_DATE + INTERVAL '14 days', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-       ('Vegetarian Challenge', 'Follow a vegetarian diet for 7 days.', '7 days', 'Daily', 'Anytime', (SELECT icon_id FROM Icons WHERE name='leaf' AND library='FontAwesome'), CURRENT_DATE - INTERVAL '10 days', CURRENT_DATE - INTERVAL '3 days', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-       ('No Caffeine Challenge', 'Avoid caffeine for 5 days.', '5 days', 'Daily', 'Anytime', (SELECT icon_id FROM Icons WHERE name='coffee' AND library='FontAwesome'), CURRENT_DATE - INTERVAL '7 days', CURRENT_DATE - INTERVAL '2 days', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
-
--- Insert user challenges for Jane Miller
-INSERT INTO UserChallenge (user_id, challenge_id, status, created_at, updated_at)
-VALUES
-       ((SELECT user_id FROM Users WHERE username='@superjane'), (SELECT challenge_id FROM Challenges WHERE challenge_name='10,000 Steps Challenge'), 'active', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-       ((SELECT user_id FROM Users WHERE username='@superjane'), (SELECT challenge_id FROM Challenges WHERE challenge_name='Read a Book Challenge'), 'active', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-       ((SELECT user_id FROM Users WHERE username='@superjane'), (SELECT challenge_id FROM Challenges WHERE challenge_name='Meditation Challenge'), 'active', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-       ((SELECT user_id FROM Users WHERE username='@superjane'), (SELECT challenge_id FROM Challenges WHERE challenge_name='No Sugar Challenge'), 'completed', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-       ((SELECT user_id FROM Users WHERE username='@superjane'), (SELECT challenge_id FROM Challenges WHERE challenge_name='Yoga Challenge'), 'completed', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
-
--- Insert user challenges for John Smith
-INSERT INTO UserChallenge (user_id, challenge_id, status, created_at, updated_at)
-VALUES
-       ((SELECT user_id FROM Users WHERE username='@johnnysmm'), (SELECT challenge_id FROM Challenges WHERE challenge_name='30-Day Fitness Challenge'), 'active', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-       ((SELECT user_id FROM Users WHERE username='@johnnysmm'), (SELECT challenge_id FROM Challenges WHERE challenge_name='Healthy Eating Challenge'), 'active', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-       ((SELECT user_id FROM Users WHERE username='@johnnysmm'), (SELECT challenge_id FROM Challenges WHERE challenge_name='No Junk Food Challenge'), 'completed', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-       ((SELECT user_id FROM Users WHERE username='@johnnysmm'), (SELECT challenge_id FROM Challenges WHERE challenge_name='Water Drinking Challenge'), 'completed', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
-
--- Insert user challenges for Emma Watson
-INSERT INTO UserChallenge (user_id, challenge_id, status, created_at, updated_at)
-VALUES
-       ((SELECT user_id FROM Users WHERE username='@emmaw'), (SELECT challenge_id FROM Challenges WHERE challenge_name='Daily Drawing Challenge'), 'active', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-       ((SELECT user_id FROM Users WHERE username='@emmaw'), (SELECT challenge_id FROM Challenges WHERE challenge_name='Writing Challenge'), 'active', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-       ((SELECT user_id FROM Users WHERE username='@emmaw'), (SELECT challenge_id FROM Challenges WHERE challenge_name='Vegetarian Challenge'), 'completed', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-       ((SELECT user_id FROM Users WHERE username='@emmaw'), (SELECT challenge_id FROM Challenges WHERE challenge_name='No Caffeine Challenge'), 'completed', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
-
--- Insert badges
-INSERT INTO Badges (badge_name, description, image_path, created_at, updated_at)
-VALUES
-       ('Badge 1', 'Description for badge 1', 'https://via.placeholder.com/50', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-       ('Badge 2', 'Description for badge 2', 'https://via.placeholder.com/50', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-       ('Badge 3', 'Description for badge 3', 'https://via.placeholder.com/50', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
-
--- Assign badges to Jane Miller
-INSERT INTO UserBadge (user_id, badge_id, earned_date, created_at, updated_at)
-VALUES
-       ((SELECT user_id FROM Users WHERE username='@superjane'), (SELECT badge_id FROM Badges WHERE badge_name='Badge 1'), CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-       ((SELECT user_id FROM Users WHERE username='@superjane'), (SELECT badge_id FROM Badges WHERE badge_name='Badge 2'), CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-       ((SELECT user_id FROM Users WHERE username='@superjane'), (SELECT badge_id FROM Badges WHERE badge_name='Badge 3'), CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
-
--- Assign badges to John Smith
-INSERT INTO UserBadge (user_id, badge_id, earned_date, created_at, updated_at)
-VALUES
-       ((SELECT user_id FROM Users WHERE username='@johnnysmm'), (SELECT badge_id FROM Badges WHERE badge_name='Badge 1'), CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-       ((SELECT user_id FROM Users WHERE username='@johnnysmm'), (SELECT badge_id FROM Badges WHERE badge_name='Badge 2'), CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-       ((SELECT user_id FROM Users WHERE username='@johnnysmm'), (SELECT badge_id FROM Badges WHERE badge_name='Badge 3'), CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
-
--- Assign badges to Emma Watson
-INSERT INTO UserBadge (user_id, badge_id, earned_date, created_at, updated_at)
-VALUES
-       ((SELECT user_id FROM Users WHERE username='@emmaw'), (SELECT badge_id FROM Badges WHERE badge_name='Badge 1'), CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-       ((SELECT user_id FROM Users WHERE username='@emmaw'), (SELECT badge_id FROM Badges WHERE badge_name='Badge 2'), CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-       ((SELECT user_id FROM Users WHERE username='@emmaw'), (SELECT badge_id FROM Badges WHERE badge_name='Badge 3'), CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+-- Data
+INSERT INTO Categories (category_name) VALUES
+('Popular'),
+('Sports'),
+('Nutrition'),
+('Happiness'),
+('Mindfulness'),
+('Self-care'),
+('Lifestyle'),
+('Relationships'),
+('Skills');
