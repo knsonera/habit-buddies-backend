@@ -39,4 +39,25 @@ router.put('/:id', authenticateToken, async (req, res) => {
     }
 });
 
+// Fetch user's quests
+router.get('/:id/quests', authenticateToken, async (req, res) => {
+    const userId = parseInt(req.params.id, 10);
+    if (isNaN(userId)) {
+        return res.status(400).json({ error: 'Invalid user ID' });
+    }
+
+    try {
+        const result = await pool.query(`
+            SELECT uq.*, q.*
+            FROM UserQuests uq
+            JOIN Quests q ON uq.quest_id = q.quest_id
+            WHERE uq.user_id = $1
+        `, [userId]);
+        res.json(result.rows);
+    } catch (err) {
+        console.error('Error fetching user quests:', err);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
 module.exports = router;

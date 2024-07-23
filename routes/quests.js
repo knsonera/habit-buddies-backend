@@ -36,7 +36,7 @@ router.get('/:id', authenticateToken, async (req, res) => {
 // Create a new quest
 router.post('/', authenticateToken, async (req, res) => {
     const { quest_name, description, duration, checkin_frequency, time, icon_id, start_date, end_date, category_id, status } = req.body;
-    const userId = req.user.userId;
+    const userId = req.user.userId; // Assume userId is set by authenticateToken middleware
     try {
         await pool.query('BEGIN');
 
@@ -47,7 +47,7 @@ router.post('/', authenticateToken, async (req, res) => {
         const quest = questResult.rows[0];
 
         await pool.query(
-            "INSERT INTO UserQuests (user_id, quest_id, status) VALUES ($1, $2, 'active')",
+            "INSERT INTO UserQuests (user_id, quest_id, status, role) VALUES ($1, $2, 'active', 'owner')",
             [userId, quest.quest_id]
         );
 
