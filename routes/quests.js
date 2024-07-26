@@ -95,7 +95,24 @@ router.post('/:id/invite', authenticateToken, async (req, res) => {
 // Update a quest
 router.put('/:id', authenticateToken, async (req, res) => {
     const { id } = req.params;
-    const { quest_name, description, duration, checkin_frequency, time, icon_id, start_date, end_date, category_id, status } = req.body;
+    const {
+        quest_name,
+        description,
+        duration,
+        checkin_frequency,
+        time,
+        icon_id,
+        start_date,
+        end_date,
+        category_id,
+        status
+    } = req.body;
+
+    // Basic validation
+    if (!quest_name || !description || !duration || !checkin_frequency || !time || !icon_id || !start_date || !end_date || !category_id || !status) {
+        return res.status(400).json({ error: 'All fields are required' });
+    }
+
     try {
         const result = await pool.query(
             'UPDATE Quests SET quest_name = $1, description = $2, duration = $3, checkin_frequency = $4, time = $5, icon_id = $6, start_date = $7, end_date = $8, category_id = $9, status = $10 WHERE quest_id = $11 RETURNING *',
@@ -112,6 +129,7 @@ router.put('/:id', authenticateToken, async (req, res) => {
         res.status(500).json({ error: 'Internal server error' });
     }
 });
+
 
 // Delete a quest
 router.delete('/:id', authenticateToken, async (req, res) => {
@@ -140,6 +158,62 @@ router.post('/:id/start', authenticateToken, async (req, res) => {
         res.status(201).json(result.rows[0]);
     } catch (err) {
         console.error('Error starting quest:', err);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// 
+router.get('/:id/users', authenticateToken, async (req, res) => {
+    const { id } = req.params;
+
+    try {
+        const result = await pool.query(
+            `SELECT u.user_id, u.username, u.fullname
+            FROM Users u
+            JOIN UserQuests uq ON u.user_id = uq.user_id
+            WHERE uq.quest_id = $1`,
+            [id]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'No participants found for this quest' });
+        }
+
+        res.json(result.rows);
+    } catch (err) {
+        console.error('Error fetching quest participants:', err);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// Fetch messages for a quest
+router.get('/:id/messages', authenticateToken, async (req, res) => {
+    const { id } = req.params;
+    try {
+        const result = await pool.query(
+            'SELECT m.message_id, m.user_id, u.username, m.message_text, m.sent_at FROM QuestMessages m JOIN Users u ON m.user_id = u.user_id WHERE m.quest_id = $1 ORDER BY m.sent_at ASC',
+            [id]
+        );
+        res.json(result.rows);
+    } catch (err) {
+        console.error('Error fetching messages:', err);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// Store a new message
+router.post('/:id/messages', authenticateToken, async (req, res) => {
+    const { id } = req.params;
+    const { message_text, user_id } = req.body;
+
+    try {
+        const result = await pool.query(
+            'INSERT INTO QuestMessages (quest_id, user_id, message_text) VALUES ($1, $2, $3) RETURNING *',
+            [id, user_id, message_text]
+        );
+        res.status(201).json(result.rows[0]);
+    } catch (err) {
+        console.error('Error storing message:', err);
         res.status(500).json({ error: 'Internal server error' });
     }
 });
