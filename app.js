@@ -1,6 +1,9 @@
 const express = require('express');
 const bodyParser = require('body-parser');
+const http = require('http');
 const { authenticateToken } = require('./middleware/auth'); 
+const setupWebSocket = require('./services/websocket'); // Adjust the path to your WebSocket setup
+
 const app = express();
 
 // Load secret key from environment variables
@@ -28,9 +31,14 @@ app.use(authenticateToken);
 app.use('/users', userRoutes);
 app.use('/quests', questsRoutes);
 
+const server = http.createServer(app);
+
+// Setup WebSocket server
+setupWebSocket(server);
+
 if (require.main === module) {
     const port = process.env.PORT || 3000;
-    app.listen(port, () => {
+    server.listen(port, () => {
         console.log(`Server is running on port ${port}`);
     });
 }

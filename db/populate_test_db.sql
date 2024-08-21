@@ -54,6 +54,14 @@ CREATE TABLE UserQuests (
     UNIQUE (user_id, quest_id)
 );
 
+CREATE TABLE QuestMessages (
+    message_id SERIAL PRIMARY KEY,
+    quest_id INT REFERENCES Quests(quest_id),
+    user_id INT REFERENCES Users(user_id),
+    message_text TEXT NOT NULL,
+    sent_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Data
 INSERT INTO Categories (category_name) VALUES
 ('Popular'),
