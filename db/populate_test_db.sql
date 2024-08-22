@@ -62,6 +62,18 @@ CREATE TABLE QuestMessages (
     sent_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE Friendships (
+    id SERIAL PRIMARY KEY,
+    user_id INT REFERENCES Users(user_id),
+    friend_id INT REFERENCES Users(user_id),
+    status VARCHAR(10) NOT NULL,  -- 'active' or 'pending'
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CHECK (user_id <> friend_id),  -- Ensure user_id and friend_id are not the same
+    user_pair TEXT GENERATED ALWAYS AS (LEAST(user_id, friend_id) || '-' || GREATEST(user_id, friend_id)) STORED,
+    UNIQUE (user_pair)  -- Unique constraint on the user pair
+);
+
 -- Data
 INSERT INTO Categories (category_name) VALUES
 ('Popular'),
