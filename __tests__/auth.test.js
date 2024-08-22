@@ -7,7 +7,11 @@ describe('Auth Endpoints', () => {
     let refreshToken;
 
     beforeAll(async () => {
-        await pool.query('DELETE FROM Users'); // Clear the Users table before tests
+        // Clear related data in the correct order to avoid foreign key constraint issues
+        await pool.query('DELETE FROM QuestMessages'); // Clear the QuestMessages table
+        await pool.query('DELETE FROM UserQuests');    // Clear the UserQuests table
+        await pool.query('DELETE FROM Quests');        // Clear the Quests table
+        await pool.query('DELETE FROM Users');         // Then clear the Users table
     });
 
     afterAll(async () => {
