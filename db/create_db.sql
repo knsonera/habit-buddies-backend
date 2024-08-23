@@ -1,6 +1,3 @@
--- Create Database
-CREATE DATABASE habit_buddies;
-\c habit_buddies
 
 -- Create Users table
 CREATE TABLE Users (
@@ -69,12 +66,12 @@ CREATE TABLE Friendships (
     status VARCHAR(10) NOT NULL,  -- 'active' or 'pending'
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    CHECK (user_id <> friend_id),  -- Ensure user_id and friend_id are not the same
+    CHECK (user_id <> friend_id),  -- user_id and friend_id are not the same
     user_pair TEXT GENERATED ALWAYS AS (LEAST(user_id, friend_id) || '-' || GREATEST(user_id, friend_id)) STORED,
-    UNIQUE (user_pair)  -- Unique constraint on the user pair
+    UNIQUE (user_pair)
 );
 
--- Data
+-- Basic Data
 INSERT INTO Categories (category_name) VALUES
 ('Popular'),
 ('Sports'),
@@ -85,4 +82,3 @@ INSERT INTO Categories (category_name) VALUES
 ('Lifestyle'),
 ('Relationships'),
 ('Skills');
-

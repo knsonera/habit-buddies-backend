@@ -19,7 +19,8 @@ app.use(bodyParser.json());
 // Import routes
 const userRoutes = require('./routes/users'); 
 const questsRoutes = require('./routes/quests');
-const authRoutes = require('./routes/auth'); 
+const authRoutes = require('./routes/auth');
+const friendshipsRoutes = require('./routes/friendships');
 
 // Authentication routes (do not require authentication)
 app.use('/auth', authRoutes);
@@ -30,6 +31,7 @@ app.use(authenticateToken);
 // Use routes
 app.use('/users', userRoutes);
 app.use('/quests', questsRoutes);
+app.use('/friendships', friendshipsRoutes);
 
 const server = http.createServer(app);
 
