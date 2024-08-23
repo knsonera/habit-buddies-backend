@@ -67,8 +67,7 @@ CREATE TABLE Friendships (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     CHECK (user_id <> friend_id),  -- user_id and friend_id are not the same
-    user_pair TEXT GENERATED ALWAYS AS (LEAST(user_id, friend_id) || '-' || GREATEST(user_id, friend_id)) STORED,
-    UNIQUE (user_pair)
+    UNIQUE (user_id, friend_id) -- the pair of user_id and friend_id is unique
 );
 
 -- Basic Data

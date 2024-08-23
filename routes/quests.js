@@ -60,38 +60,6 @@ router.post('/', authenticateToken, async (req, res) => {
     }
 });
 
-// Join a quest
-router.post('/:id/join', authenticateToken, async (req, res) => {
-    const { id } = req.params;
-    const userId = req.user.userId;
-    try {
-        const result = await pool.query(
-            "INSERT INTO UserQuests (user_id, quest_id, status) VALUES ($1, $2, 'active') RETURNING *",
-            [userId, id]
-        );
-        res.status(201).json(result.rows[0]);
-    } catch (err) {
-        console.error('Error joining quest:', err);
-        res.status(500).json({ error: 'Internal server error' });
-    }
-});
-
-// Invite a friend to a quest
-router.post('/:id/invite', authenticateToken, async (req, res) => {
-    const { id } = req.params;  // quest ID
-    const { senderId, receiverId } = req.body;  // IDs of the sender and receiver
-    try {
-        const result = await pool.query(
-            'INSERT INTO FriendInvites (quest_id, sender_id, receiver_id) VALUES ($1, $2, $3) RETURNING *',
-            [id, senderId, receiverId]
-        );
-        res.status(201).json(result.rows[0]);
-    } catch (err) {
-        console.error('Error inviting to quest:', err);
-        res.status(500).json({ error: 'Internal server error' });
-    }
-});
-
 // Update a quest
 router.put('/:id', authenticateToken, async (req, res) => {
     const { id } = req.params;
