@@ -130,6 +130,32 @@ router.post('/:id/start', authenticateToken, async (req, res) => {
     }
 });
 
+// Get category for a quest
+router.get('/:id/category', authenticateToken, async (req, res) => {
+    const { id } = req.params; // quest ID
+    const { ownerId } = req.query; // owner ID from query params
+
+    try {
+        const query = `
+            SELECT c.category_id, c.category_name
+            FROM Quests q
+            JOIN Categories c ON q.category_id = c.category_id
+            WHERE q.quest_id = $1 AND q.created_by = $2;
+        `;
+
+        const result = await pool.query(query, [id, ownerId]);
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Category not found for the provided quest and owner.' });
+        }
+
+        res.json(result.rows[0]);
+    } catch (error) {
+        console.error('Error fetching category:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
 // Get the owner of a quest
 router.get('/:id/owner', authenticateToken, async (req, res) => {
     const { id } = req.params;  // quest ID
@@ -161,7 +187,7 @@ router.get('/:id/users', authenticateToken, async (req, res) => {
 
     try {
         const result = await pool.query(
-            `SELECT u.user_id, u.username, u.fullname
+            `SELECT u.user_id, u.username, u.fullname, uq.role, uq.status
             FROM Users u
             JOIN UserQuests uq ON u.user_id = uq.user_id
             WHERE uq.quest_id = $1`,
@@ -274,6 +300,7 @@ router.post('/:id/request', authenticateToken, async (req, res) => {
     const userId = req.user.userId;
 
     try {
+        // Check if the user is already part of the quest or has a pending request
         const existingRequest = await pool.query(
             'SELECT * FROM UserQuests WHERE quest_id = $1 AND user_id = $2',
             [id, userId]
@@ -283,6 +310,7 @@ router.post('/:id/request', authenticateToken, async (req, res) => {
             return res.status(400).json({ error: 'You have already joined or requested to join this quest.' });
         }
 
+        // Insert a new pending request
         const result = await pool.query(
             'INSERT INTO UserQuests (user_id, quest_id, status, role) VALUES ($1, $2, $3, $4) RETURNING *',
             [userId, id, 'pending', 'participant']
@@ -294,6 +322,7 @@ router.post('/:id/request', authenticateToken, async (req, res) => {
         res.status(500).json({ error: 'Internal server error' });
     }
 });
+
 
 // Approve a request to join a quest
 router.post('/:id/approve-request', authenticateToken, async (req, res) => {
