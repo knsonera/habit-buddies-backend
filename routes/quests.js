@@ -325,7 +325,7 @@ router.post('/:id/request', authenticateToken, async (req, res) => {
 
 
 // Approve a request to join a quest
-router.post('/:id/approve-request', authenticateToken, async (req, res) => {
+router.post('/:id/request-approve', authenticateToken, async (req, res) => {
     const { id } = req.params;  // quest ID
     const { userId } = req.body;  // ID of the user who requested to join
 
@@ -358,7 +358,7 @@ router.post('/:id/approve-request', authenticateToken, async (req, res) => {
 });
 
 // Delete a request to join a quest
-router.delete('/:id/delete-request', authenticateToken, async (req, res) => {
+router.delete('/:id/request-delete', authenticateToken, async (req, res) => {
     const { id } = req.params;  // quest ID
     const { userId } = req.body;  // ID of the user who requested to join
 
