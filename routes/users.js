@@ -87,4 +87,30 @@ router.get('/:id/quests', authenticateToken, async (req, res) => {
     }
 });
 
+// Fetch user's active friends
+router.get('/:id/friends', authenticateToken, async (req, res) => {
+    const userId = parseInt(req.params.id, 10);
+    if (isNaN(userId)) {
+        return res.status(400).json({ error: 'Invalid user ID' });
+    }
+
+    try {
+        const result = await pool.query(`
+            SELECT u.user_id, u.fullname, u.username, u.avatar_id
+            FROM Friendships f
+            JOIN Users u ON (f.user_id = u.user_id OR f.friend_id = u.user_id)
+            WHERE (f.user_id = $1 OR f.friend_id = $1) AND f.status = 'active' AND u.user_id <> $1
+        `, [userId]);
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ message: 'No active friends found' });
+        }
+
+        res.json(result.rows);
+    } catch (err) {
+        console.error('Error fetching user friends:', err);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
 module.exports = router;
