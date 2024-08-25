@@ -30,7 +30,7 @@ CREATE TABLE Quests (
     time VARCHAR(50),
     zoom_link VARCHAR(100),
     icon_id INT DEFAULT 1,
-    start_date DATE,
+    start_date DATE DEFAULT CURRENT_DATE,
     end_date DATE,
     category_id INT REFERENCES Categories(category_id) DEFAULT 1,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -69,6 +69,18 @@ CREATE TABLE Friendships (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     CHECK (user_id <> friend_id),  -- user_id and friend_id are not the same
     UNIQUE (user_id, friend_id) -- the pair of user_id and friend_id is unique
+);
+
+CREATE TABLE CheckIns (
+    checkin_id SERIAL PRIMARY KEY,
+    user_id INT NOT NULL,
+    quest_id INT NOT NULL,
+    checkin_date DATE DEFAULT CURRENT_DATE,
+    comment TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES Users(user_id) ON DELETE CASCADE,
+    FOREIGN KEY (quest_id) REFERENCES Quests(quest_id) ON DELETE CASCADE
+    UNIQUE (user_id, quest_id, checkin_date);
 );
 
 -- Basic Data

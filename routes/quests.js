@@ -409,6 +409,81 @@ router.delete('/:id/invite-delete', authenticateToken, async (req, res) => {
     }
 });
 
+// Create new check-in
+router.post('/:id/checkins', authenticateToken, async (req, res) => {
+    const { id } = req.params; 
+    const user_id = req.user.userId;
+    const { comment } = req.body;
+
+    try {
+        const result = await pool.query(
+            'INSERT INTO CheckIns (user_id, quest_id, checkin_date, comment) VALUES ($1, $2, CURRENT_DATE, $3) RETURNING *',
+            [user_id, id, comment]
+        );
+        res.status(201).json(result.rows[0]);
+    } catch (err) {
+        if (err.code === '23505') {
+            res.status(409).json({ error: 'You have already checked in today for this quest.' });
+        } else {
+            console.error('Error creating check-in:', err);
+            res.status(500).json({ error: 'Internal server error' });
+        }
+    }
+});
+
+// Fetch all check-ins for the quest
+router.get('/:id/checkins', authenticateToken, async (req, res) => {
+    const { id } = req.params;  // quest_id from the URL
+
+    try {
+        const result = await pool.query(
+            'SELECT * FROM CheckIns WHERE quest_id = $1 ORDER BY checkin_date DESC',
+            [id]
+        );
+        res.status(200).json(result.rows);
+    } catch (err) {
+        console.error('Error fetching check-ins:', err);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// Fetch all check-ins done by a particular user
+router.get('/:id/users/:user_id/checkins', authenticateToken, async (req, res) => {
+    const { id, user_id } = req.params;
+
+    try {
+        const result = await pool.query(
+            'SELECT * FROM CheckIns WHERE quest_id = $1 AND user_id = $2 ORDER BY checkin_date DESC',
+            [id, user_id]
+        );
+        res.status(200).json(result.rows);
+    } catch (err) {
+        console.error('Error fetching check-ins:', err);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// Check if a user has already checked in today for a specific quest
+router.get('/:id/checkins/today', authenticateToken, async (req, res) => {
+    const { id } = req.params;
+    const userId = req.user.userId;
+
+    try {
+        const result = await pool.query(
+            'SELECT * FROM CheckIns WHERE quest_id = $1 AND user_id = $2 AND checkin_date = CURRENT_DATE',
+            [quest_id, userId]
+        );
+
+        if (result.rows.length > 0) {
+            return res.status(200).json({ checkedIn: true });
+        } else {
+            return res.status(200).json({ checkedIn: false });
+        }
+    } catch (err) {
+        console.error('Error checking today\'s check-in:', err);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
 
 
 // Fetch messages for a quest

@@ -32,9 +32,13 @@ router.get('/search', authenticateToken, async (req, res) => {
 
 // Fetch user details
 router.get('/:id', authenticateToken, async (req, res) => {
-    const { id } = req.params;
+    const userId = parseInt(req.params.id, 10);
+    if (isNaN(userId)) {
+        return res.status(400).json({ error: 'Invalid user ID' });
+    }
+
     try {
-        const result = await pool.query('SELECT * FROM Users WHERE user_id = $1', [id]);
+        const result = await pool.query('SELECT * FROM Users WHERE user_id = $1', [userId]);
         if (result.rows.length === 0) {
             return res.status(404).json({ error: 'User not found' });
         }
@@ -114,6 +118,31 @@ router.get('/:id/friends', authenticateToken, async (req, res) => {
         res.json(result.rows);
     } catch (err) {
         console.error('Error fetching user friends:', err);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// Fetch all check-ins done by user
+router.get('/:id/checkins', authenticateToken, async (req, res) => {
+    const userId = parseInt(req.params.id, 10);
+
+    if (isNaN(userId)) {
+        return res.status(400).json({ error: 'Invalid user ID' });
+    }
+
+    try {
+        const result = await pool.query(
+            `SELECT c.*, q.quest_name
+             FROM CheckIns c
+             JOIN Quests q ON c.quest_id = q.quest_id
+             WHERE c.user_id = $1
+             ORDER BY c.checkin_date DESC`,
+            [userId]
+        );
+
+        res.json(result.rows);
+    } catch (err) {
+        console.error('Error fetching user check-ins:', err);
         res.status(500).json({ error: 'Internal server error' });
     }
 });
