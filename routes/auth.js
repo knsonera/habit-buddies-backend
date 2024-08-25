@@ -12,6 +12,9 @@ const refreshTokenSecret = process.env.REFRESH_TOKEN_SECRET;
 // Signup endpoint
 router.post('/signup', async (req, res) => {
     const { email, password, username, fullname } = req.body;
+    // Generate a random avatar_id between 1 and 10
+    const avatarId = Math.floor(Math.random() * 20) + 1;
+
     try {
         const emailCheck = await pool.query('SELECT * FROM Users WHERE email = $1', [email]);
         const usernameCheck = await pool.query('SELECT * FROM Users WHERE username = $1', [username]);
@@ -25,8 +28,8 @@ router.post('/signup', async (req, res) => {
 
         const hashedPassword = await bcrypt.hash(password, 10);
         const result = await pool.query(
-            'INSERT INTO Users (email, password_hash, username, fullname, refresh_token) VALUES ($1, $2, $3, $4, $5) RETURNING *',
-            [email, hashedPassword, username, fullname, null]
+            'INSERT INTO Users (email, password_hash, username, fullname, refresh_token, avatar_id) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
+            [email, hashedPassword, username, fullname, null, avatarId]
         );
 
         const user = result.rows[0];

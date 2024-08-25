@@ -47,7 +47,7 @@ router.post('/', authenticateToken, async (req, res) => {
         const quest = questResult.rows[0];
 
         await pool.query(
-            "INSERT INTO UserQuests (user_id, quest_id, status, role) VALUES ($1, $2, 'active', 'owner')",
+            "INSERT INTO UserQuests (user_id, quest_id, user_status, role) VALUES ($1, $2, 'active', 'owner')",
             [userId, quest.quest_id]
         );
 
@@ -120,7 +120,7 @@ router.post('/:id/start', authenticateToken, async (req, res) => {
     const userId = req.user.userId;
     try {
         const result = await pool.query(
-            "INSERT INTO UserQuests (user_id, quest_id, status, joined_at) VALUES ($1, $2, 'active', CURRENT_TIMESTAMP) RETURNING *",
+            "INSERT INTO UserQuests (user_id, quest_id, user_status, joined_at) VALUES ($1, $2, 'active', CURRENT_TIMESTAMP) RETURNING *",
             [userId, id]
         );
         res.status(201).json(result.rows[0]);
@@ -187,7 +187,7 @@ router.get('/:id/users', authenticateToken, async (req, res) => {
 
     try {
         const result = await pool.query(
-            `SELECT u.user_id, u.username, u.fullname, uq.role, uq.status
+            `SELECT u.user_id, u.username, u.fullname, uq.role, uq.user_status
             FROM Users u
             JOIN UserQuests uq ON u.user_id = uq.user_id
             WHERE uq.quest_id = $1`,
@@ -201,95 +201,6 @@ router.get('/:id/users', authenticateToken, async (req, res) => {
         res.json(result.rows);
     } catch (err) {
         console.error('Error fetching quest participants:', err);
-        res.status(500).json({ error: 'Internal server error' });
-    }
-});
-
-// Invite a friend to a quest
-router.post('/:id/invite', authenticateToken, async (req, res) => {
-    const { id } = req.params;  // quest ID
-    const { receiverId } = req.body;  // ID of the friend being invited
-    const senderId = req.user.userId;  // ID of the current user (quest owner)
-
-    try {
-        // Check if the current user is the owner of the quest
-        const ownerCheck = await pool.query(
-            'SELECT * FROM UserQuests WHERE quest_id = $1 AND user_id = $2 AND role = $3',
-            [id, senderId, 'owner']
-        );
-
-        if (ownerCheck.rows.length === 0) {
-            return res.status(403).json({ error: 'Only the owner can invite participants.' });
-        }
-
-        // Check if the receiver is already a participant
-        const existingParticipant = await pool.query(
-            'SELECT * FROM UserQuests WHERE quest_id = $1 AND user_id = $2',
-            [id, receiverId]
-        );
-
-        if (existingParticipant.rows.length > 0) {
-            return res.status(400).json({ error: 'User is already a participant or has a pending invite.' });
-        }
-
-        // Create a pending invite
-        const result = await pool.query(
-            'INSERT INTO UserQuests (user_id, quest_id, status, role) VALUES ($1, $2, $3, $4) RETURNING *',
-            [receiverId, id, 'pending', 'participant']
-        );
-
-        res.status(201).json(result.rows[0]);
-    } catch (err) {
-        console.error('Error inviting to quest:', err);
-        res.status(500).json({ error: 'Internal server error' });
-    }
-});
-
-// Approve an invite to a quest
-router.post('/:id/approve-invite', authenticateToken, async (req, res) => {
-    const { id } = req.params;  // quest ID
-    const userId = req.user.userId;
-
-    try {
-        const invite = await pool.query(
-            'SELECT * FROM UserQuests WHERE quest_id = $1 AND user_id = $2 AND status = $3',
-            [id, userId, 'pending']
-        );
-
-        if (invite.rows.length === 0) {
-            return res.status(404).json({ error: 'No pending invite found.' });
-        }
-
-        const result = await pool.query(
-            'UPDATE UserQuests SET status = $1 WHERE quest_id = $2 AND user_id = $3 RETURNING *',
-            ['active', id, userId]
-        );
-
-        res.status(200).json(result.rows[0]);
-    } catch (err) {
-        console.error('Error approving invite:', err);
-        res.status(500).json({ error: 'Internal server error' });
-    }
-});
-
-// Delete an invite to a quest
-router.delete('/:id/delete-invite', authenticateToken, async (req, res) => {
-    const { id } = req.params;  // quest ID
-    const userId = req.user.userId;
-
-    try {
-        const invite = await pool.query(
-            'DELETE FROM UserQuests WHERE quest_id = $1 AND user_id = $2 AND status = $3 RETURNING *',
-            [id, userId, 'pending']
-        );
-
-        if (invite.rows.length === 0) {
-            return res.status(404).json({ error: 'No pending invite found.' });
-        }
-
-        res.status(200).json({ message: 'Invite deleted successfully' });
-    } catch (err) {
-        console.error('Error deleting invite:', err);
         res.status(500).json({ error: 'Internal server error' });
     }
 });
@@ -312,7 +223,7 @@ router.post('/:id/request', authenticateToken, async (req, res) => {
 
         // Insert a new pending request
         const result = await pool.query(
-            'INSERT INTO UserQuests (user_id, quest_id, status, role) VALUES ($1, $2, $3, $4) RETURNING *',
+            'INSERT INTO UserQuests (user_id, quest_id, user_status, role) VALUES ($1, $2, $3, $4) RETURNING *',
             [userId, id, 'pending', 'participant']
         );
 
@@ -342,7 +253,7 @@ router.post('/:id/request-approve', authenticateToken, async (req, res) => {
         }
 
         const request = await pool.query(
-            'UPDATE UserQuests SET status = $1 WHERE quest_id = $2 AND user_id = $3 AND status = $4 RETURNING *',
+            'UPDATE UserQuests SET user_status = $1 WHERE quest_id = $2 AND user_id = $3 AND user_status = $4 RETURNING *',
             ['active', id, userId, 'pending']
         );
 
@@ -375,7 +286,7 @@ router.delete('/:id/request-delete', authenticateToken, async (req, res) => {
         }
 
         const request = await pool.query(
-            'DELETE FROM UserQuests WHERE quest_id = $1 AND user_id = $2 AND status = $3 RETURNING *',
+            'DELETE FROM UserQuests WHERE quest_id = $1 AND user_id = $2 AND user_status = $3 RETURNING *',
             [id, userId, 'pending']
         );
 
@@ -389,6 +300,116 @@ router.delete('/:id/request-delete', authenticateToken, async (req, res) => {
         res.status(500).json({ error: 'Internal server error' });
     }
 });
+
+// Invite a friend to a quest
+router.post('/:id/invite', authenticateToken, async (req, res) => {
+    const { id } = req.params;  // quest ID
+    const { userId, inviterId } = req.body;  // ID of the user being invited
+
+    console.log('Received invite request:', {
+        questId: id,
+        invitedUserId: userId,
+        inviterId: inviterId
+    });
+
+    if (!id || !userId || !inviterId) {
+        console.error('Missing required fields:', {
+            questId: id,
+            userId: userId,
+            inviterId: inviterId
+        });
+        return res.status(400).json({ error: 'Missing required fields.' });
+    }
+
+    try {
+        // Check if the inviter is the quest owner or participant
+        const inviterCheck = await pool.query(
+            'SELECT * FROM UserQuests WHERE quest_id = $1 AND user_id = $2 AND role IN ($3, $4)',
+            [id, inviterId, 'owner', 'participant']
+        );
+
+        if (inviterCheck.rows.length === 0) {
+            return res.status(403).json({ error: 'Only quest owner or participants can invite others.' });
+        }
+
+        // Check if the user is already in the quest or has a pending invite
+        const existingEntry = await pool.query(
+            'SELECT * FROM UserQuests WHERE quest_id = $1 AND user_id = $2',
+            [id, userId]
+        );
+
+        if (existingEntry.rows.length > 0) {
+            return res.status(409).json({ error: 'User is already in the quest or has a pending invite.' });
+        }
+
+        // Insert a new entry into UserQuests with status "invited"
+        const invite = await pool.query(
+            'INSERT INTO UserQuests (user_id, quest_id, user_status, role) VALUES ($1, $2, $3, $4) RETURNING *',
+            [userId, id, 'invited', 'participant']
+        );
+
+        res.status(201).json(invite.rows[0]);
+    } catch (err) {
+        console.error('Error inviting friend:', err);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// Accept an invite to a quest
+router.post('/:id/invite-accept', authenticateToken, async (req, res) => {
+    const { id } = req.params;  // quest ID
+    const userId = req.user.userId;  // ID of the user accepting the invite
+
+    try {
+        const inviteCheck = await pool.query(
+            'SELECT * FROM UserQuests WHERE quest_id = $1 AND user_id = $2 AND user_status = $3',
+            [id, userId, 'invited']
+        );
+
+        if (inviteCheck.rows.length === 0) {
+            return res.status(404).json({ error: 'No invite found for this user.' });
+        }
+
+        const acceptInvite = await pool.query(
+            'UPDATE UserQuests SET user_status = $1 WHERE quest_id = $2 AND user_id = $3 RETURNING *',
+            ['active', id, userId]
+        );
+
+        res.status(200).json(acceptInvite.rows[0]);
+    } catch (err) {
+        console.error('Error accepting invite:', err);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// Decline an invite to a quest
+router.delete('/:id/invite-delete', authenticateToken, async (req, res) => {
+    const { id } = req.params;  // quest ID
+    const userId = req.user.userId;  // ID of the user declining the invite
+
+    try {
+        const inviteCheck = await pool.query(
+            'SELECT * FROM UserQuests WHERE quest_id = $1 AND user_id = $2 AND user_status = $3',
+            [id, userId, 'invited']
+        );
+
+        if (inviteCheck.rows.length === 0) {
+            return res.status(404).json({ error: 'No invite found for this user.' });
+        }
+
+        await pool.query(
+            'DELETE FROM UserQuests WHERE quest_id = $1 AND user_id = $2 AND user_status = $3',
+            [id, userId, 'invited']
+        );
+
+        res.status(200).json({ message: 'Invite declined successfully' });
+    } catch (err) {
+        console.error('Error declining invite:', err);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+
 
 // Fetch messages for a quest
 router.get('/:id/messages', authenticateToken, async (req, res) => {

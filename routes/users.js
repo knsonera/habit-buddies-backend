@@ -80,6 +80,11 @@ router.get('/:id/quests', authenticateToken, async (req, res) => {
             JOIN Quests q ON uq.quest_id = q.quest_id
             WHERE uq.user_id = $1
         `, [userId]);
+
+        // Log the data being sent to the user
+        console.log('Fetched quests for user:', userId);
+        console.log('Quest data:', result.rows);
+
         res.json(result.rows);
     } catch (err) {
         console.error('Error fetching user quests:', err);
@@ -102,9 +107,9 @@ router.get('/:id/friends', authenticateToken, async (req, res) => {
             WHERE (f.user_id = $1 OR f.friend_id = $1) AND f.status = 'active' AND u.user_id <> $1
         `, [userId]);
 
-        if (result.rows.length === 0) {
-            return res.status(404).json({ message: 'No active friends found' });
-        }
+        //if (result.rows.length === 0) {
+        //    return res.status(404).json({ message: 'No active friends found' });
+        //}
 
         res.json(result.rows);
     } catch (err) {

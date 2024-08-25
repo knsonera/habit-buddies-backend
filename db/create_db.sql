@@ -48,7 +48,7 @@ CREATE TABLE UserQuests (
     joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     role VARCHAR(20) NOT NULL,
     CONSTRAINT user_quest_role_check CHECK (role IN ('owner', 'participant')),
-    CONSTRAINT user_quest_status_check CHECK (status IN ('pending', 'active')),
+    CONSTRAINT user_quest_status_check CHECK (status IN ('pending', 'invited', 'active')),
     UNIQUE (user_id, quest_id)
 );
 
