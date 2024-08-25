@@ -437,7 +437,13 @@ router.get('/:id/checkins', authenticateToken, async (req, res) => {
 
     try {
         const result = await pool.query(
-            'SELECT * FROM CheckIns WHERE quest_id = $1 ORDER BY checkin_date DESC',
+            `
+            SELECT c.checkin_id, c.user_id, c.quest_id, c.checkin_date, c.comment, c.created_at, u.fullname 
+            FROM CheckIns c
+            JOIN Users u ON c.user_id = u.user_id
+            WHERE c.quest_id = $1
+            ORDER BY c.created_at DESC
+            `,
             [id]
         );
         res.status(200).json(result.rows);
@@ -463,28 +469,21 @@ router.get('/:id/users/:user_id/checkins', authenticateToken, async (req, res) =
     }
 });
 
-// Check if a user has already checked in today for a specific quest
-router.get('/:id/checkins/today', authenticateToken, async (req, res) => {
-    const { id } = req.params;
-    const userId = req.user.userId;
+// Fetch check-ins done by a particular user for today
+router.get('/:id/users/:user_id/checkins/today', authenticateToken, async (req, res) => {
+    const { id, user_id } = req.params;
 
     try {
         const result = await pool.query(
-            'SELECT * FROM CheckIns WHERE quest_id = $1 AND user_id = $2 AND checkin_date = CURRENT_DATE',
-            [quest_id, userId]
+            'SELECT * FROM CheckIns WHERE quest_id = $1 AND user_id = $2 AND checkin_date::date = CURRENT_DATE ORDER BY checkin_date DESC',
+            [id, user_id]
         );
-
-        if (result.rows.length > 0) {
-            return res.status(200).json({ checkedIn: true });
-        } else {
-            return res.status(200).json({ checkedIn: false });
-        }
+        res.status(200).json(result.rows);
     } catch (err) {
-        console.error('Error checking today\'s check-in:', err);
+        console.error('Error fetching check-ins:', err);
         res.status(500).json({ error: 'Internal server error' });
     }
 });
-
 
 // Fetch messages for a quest
 router.get('/:id/messages', authenticateToken, async (req, res) => {

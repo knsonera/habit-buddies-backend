@@ -147,4 +147,29 @@ router.get('/:id/checkins', authenticateToken, async (req, res) => {
     }
 });
 
+// Fetch all check-ins done by user for today
+router.get('/:id/checkins/today', authenticateToken, async (req, res) => {
+    const userId = parseInt(req.params.id, 10);
+
+    if (isNaN(userId)) {
+        return res.status(400).json({ error: 'Invalid user ID' });
+    }
+
+    try {
+        const result = await pool.query(
+            `SELECT c.*, q.quest_name
+             FROM CheckIns c
+             JOIN Quests q ON c.quest_id = q.quest_id
+             WHERE c.user_id = $1 AND c.checkin_date::date = CURRENT_DATE
+             ORDER BY c.checkin_date DESC`,
+            [userId]
+        );
+
+        res.json(result.rows);
+    } catch (err) {
+        console.error('Error fetching user check-ins:', err);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
 module.exports = router;
