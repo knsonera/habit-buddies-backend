@@ -33,5 +33,5 @@ jobs:
         port: 22
         script: |
           cd /var/www/habit-buddies-server
-          npm install
+          /home/ubuntu/.nvm/versions/node/v20.17.0/bin/npm install
           sudo systemctl restart habit-buddies-server
