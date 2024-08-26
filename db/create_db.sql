@@ -79,8 +79,8 @@ CREATE TABLE CheckIns (
     comment TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES Users(user_id) ON DELETE CASCADE,
-    FOREIGN KEY (quest_id) REFERENCES Quests(quest_id) ON DELETE CASCADE
-    UNIQUE (user_id, quest_id, checkin_date);
+    FOREIGN KEY (quest_id) REFERENCES Quests(quest_id) ON DELETE CASCADE,
+    UNIQUE (user_id, quest_id, checkin_date)
 );
 
 -- Basic Data
