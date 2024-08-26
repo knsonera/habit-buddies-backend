@@ -52,12 +52,12 @@ router.post('/login', async (req, res) => {
         const user = result.rows[0];
 
         if (!user) {
-            return res.status(400).json({ error: 'Invalid email or password' });
+            return res.status(401).json({ error: 'Invalid email or password' });
         }
 
         const isMatch = await bcrypt.compare(password, user.password_hash);
         if (!isMatch) {
-            return res.status(400).json({ error: 'Invalid email or password' });
+            return res.status(401).json({ error: 'Invalid email or password' });
         }
 
         const { token, refreshToken } = generateTokens(user.user_id);
@@ -93,8 +93,15 @@ router.post('/refresh-token', async (req, res) => {
 
         res.json({ token, refreshToken: newRefreshToken, userId: user.user_id });
     } catch (err) {
-        console.error('Refresh token error:', err);
-        res.status(403).json({ error: 'Invalid refresh token' });
+        console.error('Refresh token verification failed:', err.message);
+
+        if (err.name === 'TokenExpiredError') {
+            return res.status(403).json({ error: 'Refresh token expired.' });
+        } else if (err.name === 'JsonWebTokenError') {
+            return res.status(403).json({ error: 'Invalid refresh token.' });
+        } else {
+            return res.status(403).json({ error: 'Refresh token verification failed.' });
+        }
     }
 });
 
