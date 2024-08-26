@@ -32,4 +32,6 @@ jobs:
         key: ${{ secrets.SSH_KEY_FOR_DEPLOYMENT }}
         port: 22
         script: |
+          cd /var/www/habit-buddies-server
+          npm install
           sudo systemctl restart habit-buddies-server
