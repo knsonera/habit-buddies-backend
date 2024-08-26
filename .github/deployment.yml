@@ -6,9 +6,9 @@ on:
       - main
 
 jobs:
-  Build-Test-Deploy:
+  Deploy:
     runs-on: ubuntu-latest  # This is the GitHub hosted runner
-
+    
     steps:
     - uses: actions/checkout@v2
 
