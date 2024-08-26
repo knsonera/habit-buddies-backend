@@ -1,0 +1,35 @@
+name: Deploy
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  Build-Test-Deploy:
+    runs-on: ubuntu-latest  # This is the GitHub hosted runner
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Install SSH Key
+      uses: shimataro/ssh-key-action@v2
+      with:
+        key: ${{ secrets.SSH_KEY_FOR_DEPLOYMENT }}
+        known_hosts: unnecessary
+
+    - name: Add Known Hosts
+      run: ssh-keyscan -p 22 -H ${{ secrets.HOST }} >> ~/.ssh/known_hosts
+
+    - name: Copy files with rsync
+      run: rsync -avz -e "ssh -p 22" ./ ${{ secrets.USERNAME }}@${{ secrets.HOST }}:/var/www/habit-buddies-server/
+
+    - name: Restart application service
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.HOST }}
+        username: ${{ secrets.USERNAME }}
+        key: ${{ secrets.SSH_KEY_FOR_DEPLOYMENT }}
+        port: 22
+        script: |
+          sudo systemctl restart habit-buddies-server
