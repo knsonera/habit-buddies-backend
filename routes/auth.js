@@ -87,11 +87,10 @@ router.post('/refresh-token', async (req, res) => {
             return res.status(403).json({ error: 'Invalid refresh token' });
         }
 
+        // Invalidate the old refresh token and issue a new one
         const { token, refreshToken: newRefreshToken } = generateTokens(user.user_id);
-
         await pool.query('UPDATE Users SET refresh_token = $1 WHERE user_id = $2', [newRefreshToken, user.user_id]);
 
-        // Ensure userId is included in the response
         res.json({ token, refreshToken: newRefreshToken, userId: user.user_id });
     } catch (err) {
         console.error('Refresh token error:', err);

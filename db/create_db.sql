@@ -44,7 +44,7 @@ CREATE TABLE UserQuests (
     user_quest_id SERIAL PRIMARY KEY,
     user_id INT REFERENCES Users(user_id),
     quest_id INT REFERENCES Quests(quest_id),
-    status VARCHAR(20) NOT NULL,
+    user_status VARCHAR(20) NOT NULL,
     joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     role VARCHAR(20) NOT NULL,
     CONSTRAINT user_quest_role_check CHECK (role IN ('owner', 'participant')),
