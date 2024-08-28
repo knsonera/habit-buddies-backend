@@ -10,11 +10,13 @@ const CLOSE_CODES = {
 };
 
 const handleMessage = async (ws, message) => {
-    console.log('Received message:', message); 
-    let parsedMessage;
+    console.log('Received message:', message);
 
+    let parsedMessage;
     try {
-        parsedMessage = JSON.parse(message);
+        const messageString = message.toString();  // Convert Buffer to String
+        parsedMessage = JSON.parse(messageString);
+        console.log('Parsed message:', parsedMessage);
     } catch (err) {
         console.error('Failed to parse message:', err);
         ws.send(JSON.stringify({ error: 'Invalid message format' }));
@@ -34,7 +36,7 @@ const handleMessage = async (ws, message) => {
         const userResult = await pool.query('SELECT * FROM users WHERE id = $1', [user_id]);
         user = userResult.rows[0];
         if (!user) {
-            console.error(`User not found for user_id: ${parsedMessage.user_id}`);
+            console.error(`User not found for user_id: ${user_id}`);
             throw new Error('User not found');
         }
     } catch (err) {
@@ -44,10 +46,10 @@ const handleMessage = async (ws, message) => {
     }
 
     const broadcastMessage = {
-        questId: parsedMessage.questId,
-        user_id: parsedMessage.user_id,
+        questId,
+        user_id,
         username: user.username,
-        message_text: parsedMessage.message_text,
+        message_text,
         sent_at: new Date().toISOString(),
     };
 
