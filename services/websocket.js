@@ -31,9 +31,10 @@ const handleMessage = async (ws, message) => {
     let user;
     try {
         // Fetch the user's details based on user_id
-        const userResult = await pool.query('SELECT full_name FROM users WHERE id = $1', [parsedMessage.user_id]);
+        const userResult = await pool.query('SELECT * FROM users WHERE id = $1', [parsedMessage.user_id]);
         user = userResult.rows[0];
         if (!user) {
+            console.error(`User not found for user_id: ${parsedMessage.user_id}`);
             throw new Error('User not found');
         }
     } catch (err) {
