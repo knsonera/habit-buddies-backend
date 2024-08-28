@@ -1,7 +1,7 @@
 const WebSocket = require('ws');
 const jwt = require('jsonwebtoken');
-const pool = require('../db'); // Adjust the path to your db configuration
-const jwtSecret = process.env.SECRET_KEY; // Make sure your SECRET_KEY is set in your environment variables
+const pool = require('../db'); 
+const jwtSecret = process.env.SECRET_KEY; 
 
 const CLOSE_CODES = {
     TOKEN_MISSING: 4001,
@@ -10,7 +10,6 @@ const CLOSE_CODES = {
 };
 
 const handleMessage = async (ws, message) => {
-    
     console.log('Received message:', message); 
     let parsedMessage;
 
@@ -29,9 +28,19 @@ const handleMessage = async (ws, message) => {
         return;
     }
 
-    // Fetch the user's details based on user_id
-    const userResult = await pool.query('SELECT full_name FROM users WHERE id = $1', [parsedMessage.user_id]);
-    const user = userResult.rows[0];
+    let user;
+    try {
+        // Fetch the user's details based on user_id
+        const userResult = await pool.query('SELECT full_name FROM users WHERE id = $1', [parsedMessage.user_id]);
+        user = userResult.rows[0];
+        if (!user) {
+            throw new Error('User not found');
+        }
+    } catch (err) {
+        console.error('Error fetching user details:', err);
+        ws.send(JSON.stringify({ error: 'Failed to fetch user details' }));
+        return;
+    }
 
     const broadcastMessage = {
         questId: parsedMessage.questId,
@@ -47,6 +56,7 @@ const handleMessage = async (ws, message) => {
             'INSERT INTO QuestMessages (quest_id, user_id, message_text) VALUES ($1, $2, $3)',
             [questId, user_id, message_text]
         );
+        console.log('Message stored in the database');
     } catch (err) {
         console.error('Error storing message:', err);
         ws.send(JSON.stringify({ error: 'Failed to store message' }));
@@ -54,18 +64,22 @@ const handleMessage = async (ws, message) => {
     }
 
     // Broadcast to all connected clients
-    wss.clients.forEach(client => {
-        if (client !== ws && client.readyState === WebSocket.OPEN) {
-            client.send(JSON.stringify(broadcastMessage));
-        }
-    });
+    try {
+        wss.clients.forEach(client => {
+            if (client !== ws && client.readyState === WebSocket.OPEN) {
+                client.send(JSON.stringify(broadcastMessage));
+            }
+        });
+        console.log('Broadcast message sent to clients');
+    } catch (err) {
+        console.error('Error broadcasting message:', err);
+    }
 };
 
 const setupWebSocket = (server) => {
     const wss = new WebSocket.Server({ server });
 
     wss.on('connection', (ws, req) => {
-
         const token = req.headers['sec-websocket-protocol'];
         if (!token) {
             ws.close(CLOSE_CODES.TOKEN_MISSING, 'Token missing');
@@ -73,7 +87,6 @@ const setupWebSocket = (server) => {
         }
         console.log('Client connected');
 
-        // Verify the token
         let decoded;
         try {
             decoded = jwt.verify(token, jwtSecret);
