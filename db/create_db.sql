@@ -36,6 +36,7 @@ CREATE TABLE Quests (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     status VARCHAR(20) NOT NULL,
     joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     created_by INT REFERENCES Users(user_id),
     CONSTRAINT quests_status_check CHECK (status IN ('active', 'completed', 'dropped'))
 );
@@ -45,7 +46,9 @@ CREATE TABLE UserQuests (
     user_id INT REFERENCES Users(user_id),
     quest_id INT REFERENCES Quests(quest_id),
     user_status VARCHAR(20) NOT NULL,
+    user_role VARCHAR(20) NOT NULL DEFAULT 'participant',
     joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     role VARCHAR(20) NOT NULL,
     CONSTRAINT user_quest_role_check CHECK (role IN ('owner', 'participant')),
     CONSTRAINT user_quest_status_check CHECK (status IN ('pending', 'invited', 'active')),
@@ -81,6 +84,18 @@ CREATE TABLE CheckIns (
     FOREIGN KEY (user_id) REFERENCES Users(user_id) ON DELETE CASCADE,
     FOREIGN KEY (quest_id) REFERENCES Quests(quest_id) ON DELETE CASCADE,
     UNIQUE (user_id, quest_id, checkin_date)
+);
+
+CREATE TABLE PowerUps (
+    power_up_id SERIAL PRIMARY KEY,
+    sender_id INT REFERENCES Users(user_id) ON DELETE CASCADE,
+    receiver_id INT REFERENCES Users(user_id) ON DELETE CASCADE,
+    event_type VARCHAR(20) NOT NULL, -- 'UserQuest' or 'CheckIn'
+    event_id INT NOT NULL, -- ID of the UserQuest or CheckIn
+    message TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    is_read BOOLEAN DEFAULT FALSE,
+    CONSTRAINT power_up_event_check CHECK (event_type IN ('UserQuest', 'CheckIn'))
 );
 
 -- Basic Data

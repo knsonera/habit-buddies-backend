@@ -21,6 +21,7 @@ const questsRoutes = require('./routes/quests');
 const authRoutes = require('./routes/auth');
 const friendshipsRoutes = require('./routes/friendships');
 const feedsRoutes = require('./routes/feeds');
+const powerUpsRoutes = require('./routes/powerups')
 
 // Authentication routes (do not require authentication)
 app.use('/auth', authRoutes);
@@ -33,6 +34,7 @@ app.use('/users', userRoutes);
 app.use('/quests', questsRoutes);
 app.use('/friendships', friendshipsRoutes);
 app.use('/feeds', feedsRoutes);
+app.use('/powerups', powerUpsRoutes);
 
 const server = http.createServer(app);
 
