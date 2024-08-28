@@ -45,4 +45,14 @@ if (require.main === module) {
     });
 }
 
+// Graceful shutdown
+process.on('SIGTERM', () => {
+    console.log('SIGTERM signal received: closing HTTP server');
+    server.close(() => {
+        console.log('HTTP server closed');
+        // If you need to do anything with the WebSocket server, do it here
+        process.exit(0);
+    });
+});
+
 module.exports = app;
