@@ -36,7 +36,7 @@ const handleMessage = async (ws, message) => {
     const broadcastMessage = {
         questId: parsedMessage.questId,
         user_id: parsedMessage.user_id,
-        full_name: user.full_name, // Include user's full name
+        full_name: user.full_name,
         message_text: parsedMessage.message_text,
         sent_at: new Date().toISOString(),
     };
@@ -56,7 +56,7 @@ const handleMessage = async (ws, message) => {
     // Broadcast to all connected clients
     wss.clients.forEach(client => {
         if (client !== ws && client.readyState === WebSocket.OPEN) {
-            client.send(JSON.stringify(broadcastMessage);
+            client.send(JSON.stringify(broadcastMessage));
         }
     });
 };
