@@ -46,7 +46,7 @@ const handleMessage = async (ws, message) => {
     const broadcastMessage = {
         questId: parsedMessage.questId,
         user_id: parsedMessage.user_id,
-        full_name: user.full_name,
+        full_name: user.username,
         message_text: parsedMessage.message_text,
         sent_at: new Date().toISOString(),
     };
