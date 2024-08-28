@@ -33,7 +33,7 @@ const handleMessage = async (ws, message) => {
     let user;
     try {
         // Fetch the user's details based on user_id
-        const userResult = await pool.query('SELECT * FROM users WHERE id = $1', [user_id]);
+        const userResult = await pool.query('SELECT * FROM users WHERE user_id = $1', [user_id]);
         user = userResult.rows[0];
         if (!user) {
             console.error(`User not found for user_id: ${user_id}`);

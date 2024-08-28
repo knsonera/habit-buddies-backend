@@ -36,7 +36,7 @@ router.get('/:id', authenticateToken, async (req, res) => {
 // Create a new quest
 router.post('/', authenticateToken, async (req, res) => {
     const { quest_name, description, duration, checkin_frequency, time, icon_id, start_date, end_date, category_id, status } = req.body;
-    const userId = req.user.userId; // Assume userId is set by authenticateToken middleware
+    const userId = req.user.userId;
     try {
         await pool.query('BEGIN');
 

@@ -2,8 +2,7 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const http = require('http');
 const { authenticateToken } = require('./middleware/auth'); 
-const setupWebSocket = require('./services/websocket'); // Adjust the path to your WebSocket setup
-
+const setupWebSocket = require('./services/websocket');
 const app = express();
 
 // Load secret key from environment variables
@@ -21,6 +20,7 @@ const userRoutes = require('./routes/users');
 const questsRoutes = require('./routes/quests');
 const authRoutes = require('./routes/auth');
 const friendshipsRoutes = require('./routes/friendships');
+const feedsRoutes = require('./routes/feeds');
 
 // Authentication routes (do not require authentication)
 app.use('/auth', authRoutes);
@@ -32,6 +32,7 @@ app.use(authenticateToken);
 app.use('/users', userRoutes);
 app.use('/quests', questsRoutes);
 app.use('/friendships', friendshipsRoutes);
+app.use('/feeds', feedsRoutes);
 
 const server = http.createServer(app);
 
