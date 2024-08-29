@@ -9,6 +9,9 @@ const CLOSE_CODES = {
     MESSAGE_FORMAT_INVALID: 4003,
 };
 
+// Define wss at the module level
+let wss;
+
 const handleMessage = async (ws, message) => {
     console.log('Received message:', message);
 
@@ -68,8 +71,11 @@ const handleMessage = async (ws, message) => {
 
     // Broadcast to all connected clients
     try {
+        console.log('Broadcasting message:', broadcastMessage);
+
+        // Broadcast to all connected clients
         wss.clients.forEach(client => {
-            if (client !== ws && client.readyState === WebSocket.OPEN) {
+            if (client.readyState === WebSocket.OPEN) {
                 client.send(JSON.stringify(broadcastMessage));
             }
         });
@@ -79,8 +85,9 @@ const handleMessage = async (ws, message) => {
     }
 };
 
+
 const setupWebSocket = (server) => {
-    const wss = new WebSocket.Server({ server });
+    wss = new WebSocket.Server({ server });
 
     wss.on('connection', (ws, req) => {
         const token = req.headers['sec-websocket-protocol'];
@@ -101,13 +108,12 @@ const setupWebSocket = (server) => {
         }
 
         ws.on('close', () => {
-            console.log('Client disconnected');
-            // Handle any cleanup if necessary
+            console.log(`Client disconnected.`);
         });
 
         ws.on('message', message => handleMessage(ws, message));
 
-        ws.send('Welcome to the chat');
+        ws.send(`You are connected.`);
     });
 
     return wss;

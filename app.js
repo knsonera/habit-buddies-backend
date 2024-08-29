@@ -39,7 +39,7 @@ app.use('/powerups', powerUpsRoutes);
 const server = http.createServer(app);
 
 // Setup WebSocket server
-setupWebSocket(server);
+const wss = setupWebSocket(server);
 
 if (require.main === module) {
     const port = process.env.PORT || 3000;
@@ -53,8 +53,17 @@ process.on('SIGTERM', () => {
     console.log('SIGTERM signal received: closing HTTP server');
     server.close(() => {
         console.log('HTTP server closed');
-        // If you need to do anything with the WebSocket server, do it here
-        process.exit(0);
+        // Close WebSocket server
+        wss.close(() => {
+            console.log('WebSocket server closed');
+            process.exit(0);
+        });
+
+        // Add a timeout to force exit if WebSocket server doesn't close
+        setTimeout(() => {
+            console.log('Forcing WebSocket server shutdown');
+            process.exit(1);
+        }, 10000);
     });
 });
 
