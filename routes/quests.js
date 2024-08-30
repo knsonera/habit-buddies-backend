@@ -63,6 +63,7 @@ router.post('/', authenticateToken, async (req, res) => {
 // Update a quest
 router.put('/:id', authenticateToken, async (req, res) => {
     const { id } = req.params;
+    
     const {
         quest_name,
         description,
@@ -72,6 +73,7 @@ router.put('/:id', authenticateToken, async (req, res) => {
         icon_id,
         start_date,
         end_date,
+        zoom_link,
         category_id,
         status
     } = req.body;
@@ -83,8 +85,8 @@ router.put('/:id', authenticateToken, async (req, res) => {
 
     try {
         const result = await pool.query(
-            'UPDATE Quests SET quest_name = $1, description = $2, duration = $3, checkin_frequency = $4, time = $5, icon_id = $6, start_date = $7, end_date = $8, category_id = $9, status = $10 WHERE quest_id = $11 RETURNING *',
-            [quest_name, description, duration, checkin_frequency, time, icon_id, start_date, end_date, category_id, status, id]
+            'UPDATE Quests SET quest_name = $1, description = $2, duration = $3, checkin_frequency = $4, time = $5, icon_id = $6, start_date = $7, end_date = $8, zoom_link = $9, category_id = $10, status = $11 WHERE quest_id = $12 RETURNING *',
+            [quest_name, description, duration, checkin_frequency, time, icon_id, start_date, end_date, zoom_link, category_id, status, id]
         );
 
         if (result.rows.length === 0) {
