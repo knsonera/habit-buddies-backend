@@ -100,6 +100,72 @@ router.put('/:id', authenticateToken, async (req, res) => {
     }
 });
 
+// End a quest
+router.put('/:id/end', authenticateToken, async (req, res) => {
+    const { id } = req.params;
+    const userId = req.user.userId;
+
+    try {
+        // Verify if the current user is the owner of the quest
+        const ownerCheck = await pool.query(
+            'SELECT * FROM UserQuests WHERE quest_id = $1 AND user_id = $2 AND role = $3',
+            [id, userId, 'owner']
+        );
+
+        if (ownerCheck.rows.length === 0) {
+            return res.status(403).json({ error: 'Only the owner can end the quest.' });
+        }
+
+        // Update the quest status to "dropped"
+        const result = await pool.query(
+            'UPDATE Quests SET status = $1, updated_at = $2 WHERE quest_id = $3 RETURNING *',
+            ['dropped', new Date().toISOString(), id]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Quest not found' });
+        }
+
+        res.json({ message: 'Quest is dropped successfully', quest: result.rows[0] });
+    } catch (err) {
+        console.error('Error ending quest:', err);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// Complete a quest
+router.put('/:id/complete', authenticateToken, async (req, res) => {
+    const { id } = req.params;
+    const userId = req.user.userId;
+
+    try {
+        // Verify if the current user is the owner of the quest
+        const ownerCheck = await pool.query(
+            'SELECT * FROM UserQuests WHERE quest_id = $1 AND user_id = $2 AND role = $3',
+            [id, userId, 'owner']
+        );
+
+        if (ownerCheck.rows.length === 0) {
+            return res.status(403).json({ error: 'Only the owner can end the quest.' });
+        }
+
+        // Update the quest status to "completed"
+        const result = await pool.query(
+            'UPDATE Quests SET status = $1, updated_at = $2 WHERE quest_id = $3 RETURNING *',
+            ['completed', new Date().toISOString(), id]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Quest not found' });
+        }
+
+        res.json({ message: 'Quest completed successfully', quest: result.rows[0] });
+    } catch (err) {
+        console.error('Error completing quest:', err);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
 
 // Delete a quest
 router.delete('/:id', authenticateToken, async (req, res) => {

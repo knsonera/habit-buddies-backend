@@ -50,20 +50,25 @@ router.get('/:id', authenticateToken, async (req, res) => {
     }
 });
 
-// Update user details
 router.put('/:id', authenticateToken, async (req, res) => {
     const { id } = req.params;
-    const { email, avatar_id, username } = req.body;
+    const { email, avatar_id, username, fullname } = req.body; 
+
+    console.log('Updating user with ID:', id);
+    console.log('Data received:', { email, avatar_id, username, fullname });
+
     try {
         const result = await pool.query(
-            'UPDATE Users SET email = $1, avatar_id = $2, username = $3, updated_at = CURRENT_TIMESTAMP WHERE user_id = $4 RETURNING *',
-            [email, avatar_id, username, id]
+            'UPDATE Users SET email = $1, avatar_id = $2, username = $3, fullname = $4, updated_at = CURRENT_TIMESTAMP WHERE user_id = $5 RETURNING *',
+            [email, avatar_id, username, fullname, id]
         );
 
         if (result.rows.length === 0) {
+            console.error('User not found for ID:', id);
             return res.status(404).json({ error: 'User not found' });
         }
 
+        console.log('User updated:', result.rows[0]);
         res.json(result.rows[0]);
     } catch (err) {
         console.error('Update user error:', err);
@@ -83,11 +88,37 @@ router.get('/:id/quests', authenticateToken, async (req, res) => {
             SELECT uq.*, q.*
             FROM UserQuests uq
             JOIN Quests q ON uq.quest_id = q.quest_id
-            WHERE uq.user_id = $1
+            WHERE uq.user_id = $1 AND q.status = 'active'
         `, [userId]);
 
         // Log the data being sent to the user
         console.log('Fetched quests for user:', userId);
+        console.log('Quest data:', result.rows);
+
+        res.json(result.rows);
+    } catch (err) {
+        console.error('Error fetching user quests:', err);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// Fetch past user's quests
+router.get('/:id/quests/past', authenticateToken, async (req, res) => {
+    const userId = parseInt(req.params.id, 10);
+    if (isNaN(userId)) {
+        return res.status(400).json({ error: 'Invalid user ID' });
+    }
+
+    try {
+        const result = await pool.query(`
+            SELECT uq.*, q.*
+            FROM UserQuests uq
+            JOIN Quests q ON uq.quest_id = q.quest_id
+            WHERE uq.user_id = $1 AND (q.status = 'dropped' OR q.status = 'completed')
+        `, [userId]);
+
+        // Log the data being sent to the user
+        console.log('Fetched past quests for user:', userId);
         console.log('Quest data:', result.rows);
 
         res.json(result.rows);
