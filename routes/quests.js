@@ -374,12 +374,6 @@ router.post('/:id/invite', authenticateToken, async (req, res) => {
     const { id } = req.params;  // quest ID
     const { userId, inviterId } = req.body;  // ID of the user being invited
 
-    console.log('Received invite request:', {
-        questId: id,
-        invitedUserId: userId,
-        inviterId: inviterId
-    });
-
     if (!id || !userId || !inviterId) {
         console.error('Missing required fields:', {
             questId: id,

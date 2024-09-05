@@ -50,12 +50,10 @@ router.get('/:id', authenticateToken, async (req, res) => {
     }
 });
 
+// Change user info
 router.put('/:id', authenticateToken, async (req, res) => {
     const { id } = req.params;
     const { email, avatar_id, username, fullname } = req.body; 
-
-    console.log('Updating user with ID:', id);
-    console.log('Data received:', { email, avatar_id, username, fullname });
 
     try {
         const result = await pool.query(
@@ -68,7 +66,6 @@ router.put('/:id', authenticateToken, async (req, res) => {
             return res.status(404).json({ error: 'User not found' });
         }
 
-        console.log('User updated:', result.rows[0]);
         res.json(result.rows[0]);
     } catch (err) {
         console.error('Update user error:', err);
@@ -90,10 +87,6 @@ router.get('/:id/quests', authenticateToken, async (req, res) => {
             JOIN Quests q ON uq.quest_id = q.quest_id
             WHERE uq.user_id = $1 AND q.status = 'active'
         `, [userId]);
-
-        // Log the data being sent to the user
-        console.log('Fetched quests for user:', userId);
-        console.log('Quest data:', result.rows);
 
         res.json(result.rows);
     } catch (err) {
@@ -117,10 +110,6 @@ router.get('/:id/quests/past', authenticateToken, async (req, res) => {
             WHERE uq.user_id = $1 AND (q.status = 'dropped' OR q.status = 'completed')
         `, [userId]);
 
-        // Log the data being sent to the user
-        console.log('Fetched past quests for user:', userId);
-        console.log('Quest data:', result.rows);
-
         res.json(result.rows);
     } catch (err) {
         console.error('Error fetching user quests:', err);
@@ -142,10 +131,6 @@ router.get('/:id/friends', authenticateToken, async (req, res) => {
             JOIN Users u ON (f.user_id = u.user_id OR f.friend_id = u.user_id)
             WHERE (f.user_id = $1 OR f.friend_id = $1) AND f.status = 'active' AND u.user_id <> $1
         `, [userId]);
-
-        //if (result.rows.length === 0) {
-        //    return res.status(404).json({ message: 'No active friends found' });
-        //}
 
         res.json(result.rows);
     } catch (err) {

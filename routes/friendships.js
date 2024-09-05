@@ -3,6 +3,7 @@ const pool = require('../db');
 const { authenticateToken } = require('../middleware/auth');
 const router = express.Router();
 
+// Check friendship status
 router.get('/status', authenticateToken, async (req, res) => {
     const { userId, friendId } = req.query;
 
@@ -24,6 +25,7 @@ router.get('/status', authenticateToken, async (req, res) => {
     }
 });
 
+// Check friendship sender
 router.get('/sender', authenticateToken, async (req, res) => {
     const { userId, friendId } = req.query;
 
@@ -45,6 +47,7 @@ router.get('/sender', authenticateToken, async (req, res) => {
     }
 });
 
+// Request friendship
 router.post('/request', authenticateToken, async (req, res) => {
     const { userId, friendId } = req.body;
 
@@ -73,6 +76,7 @@ router.post('/request', authenticateToken, async (req, res) => {
     }
 });
 
+// Approve friendship request
 router.put('/approve', authenticateToken, async (req, res) => {
     const { userId, friendId } = req.body;
 
@@ -95,6 +99,7 @@ router.put('/approve', authenticateToken, async (req, res) => {
     }
 });
 
+// Remove friend
 router.delete('/remove', authenticateToken, async (req, res) => {
     const { userId, friendId } = req.body;
 

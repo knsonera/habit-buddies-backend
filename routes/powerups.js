@@ -3,6 +3,7 @@ const pool = require('../db');
 const { authenticateToken } = require('../middleware/auth');
 const router = express.Router();
 
+// Send power-up to a user
 router.post('/', authenticateToken, async (req, res) => {
     const { userId: sender_id } = req.user;
     const { receiver_id, event_type, event_id, message } = req.body;
@@ -59,6 +60,7 @@ router.get('/unread', authenticateToken, async (req, res) => {
     }
 });
 
+// Mark power-up as read
 router.put('/:id/read', authenticateToken, async (req, res) => {
     const { id } = req.params;
 

@@ -9,9 +9,45 @@ require('dotenv').config();
 const jwtSecret = process.env.SECRET_KEY;
 const refreshTokenSecret = process.env.REFRESH_TOKEN_SECRET;
 
+// Validation functions
+const isValidEmail = (email) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+};
+  
+const isValidPassword = (password) => {
+    const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]{8,}$/;
+    return passwordRegex.test(password);
+};
+  
+const isValidName = (name) => {
+    return name.length > 4;
+};
+  
+
 // Signup endpoint
 router.post('/signup', async (req, res) => {
     const { email, password, username, fullname } = req.body;
+
+    // Validate email
+    if (!isValidEmail(email)) {
+        return res.status(400).json({ error: 'Invalid email format' });
+    }
+
+    // Validate password
+    if (!isValidPassword(password)) {
+        return res.status(400).json({ error: 'Password must be at least 8 characters long and contain letters, numbers, and special characters.' });
+    }
+
+    // Validate username and full name
+    if (!isValidName(username)) {
+        return res.status(400).json({ error: 'Username must be longer than 4 characters.' });
+    }
+
+    if (!isValidName(fullname)) {
+        return res.status(400).json({ error: 'Full name must be longer than 4 characters.' });
+    }
+
     // Generate a random avatar_id between 1 and 10
     const avatarId = Math.floor(Math.random() * 20) + 1;
 
@@ -104,7 +140,6 @@ router.post('/refresh-token', async (req, res) => {
         }
     }
 });
-
 
 // Check token validity
 router.post('/check-token', (req, res) => {

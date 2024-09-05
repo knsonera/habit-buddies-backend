@@ -3,6 +3,7 @@ const pool = require('../db');
 const { authenticateToken } = require('../middleware/auth');
 const router = express.Router();
 
+// Get quests for news feed
 router.get('/quests', authenticateToken, async (req, res) => {
     const { userId } = req.user;
     try {
@@ -13,7 +14,7 @@ router.get('/quests', authenticateToken, async (req, res) => {
                 q.quest_id,
                 q.quest_name,
                 uq.user_status AS action,
-                uq.user_role,
+                uq.role,
                 uq.joined_at AS action_time
             FROM UserQuests uq
             JOIN Users u ON uq.user_id = u.user_id
@@ -36,7 +37,7 @@ router.get('/quests', authenticateToken, async (req, res) => {
     }
 });
 
-
+// Get checkins for newsfeed
 router.get('/checkins', authenticateToken, async (req, res) => {
     const { userId } = req.user;
     
