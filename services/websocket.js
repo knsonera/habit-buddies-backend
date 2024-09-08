@@ -98,9 +98,9 @@ const setupWebSocket = (server) => {
         try {
             // Verify JWT token
             decoded = jwt.verify(token, jwtSecret);
-            console.log('Token valid, user authenticated:', decoded);
+            //console.log('Token valid, user authenticated:', decoded);
         } catch (err) {
-            console.error('Invalid token:', err);
+            //console.error('Invalid token:', err);
             ws.close(CLOSE_CODES.TOKEN_INVALID, 'Invalid token');
             return;
         }

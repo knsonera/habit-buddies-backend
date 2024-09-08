@@ -4,11 +4,7 @@ const pool = require('../db');
 
 describe('Auth Endpoints - Response Structure', () => {
     beforeAll(async () => {
-        // Clear existing data before tests
-        await pool.query('DELETE FROM QuestMessages');
-        await pool.query('DELETE FROM UserQuests');
-        await pool.query('DELETE FROM Quests');
-        await pool.query('DELETE FROM Users');
+        // Do this before all tests
     });
 
     afterAll(async () => {

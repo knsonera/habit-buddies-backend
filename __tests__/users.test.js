@@ -7,8 +7,6 @@ describe('Users Endpoints', () => {
     let userId;
 
     beforeAll(async () => {
-        // Clear existing data
-        await pool.query('DELETE FROM Users');
 
         // Sign up and log in a test user to get a token
         const signupRes = await request(app)

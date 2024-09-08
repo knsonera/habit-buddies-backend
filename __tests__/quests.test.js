@@ -10,12 +10,6 @@ describe('Quests Endpoints', () => {
     let questId;
 
     beforeAll(async () => {
-        // Clear existing data
-        await pool.query('DELETE FROM QuestMessages');
-        await pool.query('DELETE FROM UserQuests');
-        await pool.query('DELETE FROM Quests');
-        await pool.query('DELETE FROM Users');
-        await pool.query('DELETE FROM Friendships');
 
         // Sign up and log in two test users
         const signupRes1 = await request(app)
