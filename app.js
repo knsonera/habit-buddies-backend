@@ -1,6 +1,8 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const http = require('http');
+const cors = require('cors');  // Import CORS middleware
+
 const { authenticateToken } = require('./middleware/auth'); 
 const setupWebSocket = require('./services/websocket');
 const app = express();
@@ -14,6 +16,8 @@ if (!jwtSecret) {
 }
 
 app.use(bodyParser.json());
+
+app.use(cors());  // Allows all origins by default
 
 // Import routes
 const userRoutes = require('./routes/users'); 
