@@ -14,7 +14,7 @@ describe('Power-Ups Endpoints', () => {
         const signupRes = await request(app)
             .post('/auth/signup')
             .send({
-                email: 'testpowerupuser@example.com', // Unique email for testing
+                email: 'testpowerupuser@example.com',
                 password: 'testpassword',
                 username: 'poweruser',
                 fullname: 'Power User'
